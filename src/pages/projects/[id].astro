@@ -1,0 +1,115 @@
+---
+import { getCollection, render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+export async function getStaticPaths() {
+  const projects = await getCollection('projects');
+  return projects.map((project) => ({
+    params: { id: project.id },
+    props: { project },
+  }));
+}
+
+const { project } = Astro.props;
+const { Content } = await render(project);
+
+const formattedDate = new Intl.DateTimeFormat('ja-JP', {
+  timeZone: 'Asia/Tokyo',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+})
+  .format(project.data.date)
+  .replace(/\//g, '.');
+---
+
+<BaseLayout
+  title={`${project.data.title} — kurousa.dev`}
+  description={project.data.summary}
+  path={`/projects/${project.id}`}
+>
+  <article class="mx-auto max-w-3xl">
+    <a
+      href="/#projects"
+      class="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 transition-colors hover:text-sky-600 dark:text-slate-400 dark:hover:text-sky-400"
+    >
+      <span aria-hidden="true">&larr;</span>
+      <span>Projects に戻る</span>
+    </a>
+
+    <header class="mt-6 border-b border-slate-200/80 pb-8 dark:border-slate-800/80">
+      <time
+        datetime={project.data.date.toISOString()}
+        class="text-xs font-mono text-slate-500 dark:text-slate-400"
+      >
+        {formattedDate}
+      </time>
+
+      <h1 class="mt-2 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl dark:text-white">
+        {project.data.title}
+      </h1>
+
+      <p class="mt-4 text-base leading-7 text-slate-600 dark:text-slate-300">
+        {project.data.summary}
+      </p>
+
+      <div class="mt-5 flex flex-wrap gap-2">
+        {
+          project.data.tech.map((item) => (
+            <span class="inline-flex items-center rounded-md border border-slate-200 bg-slate-100/80 px-2.5 py-1 text-xs font-medium text-slate-700 dark:border-slate-700/80 dark:bg-slate-800/80 dark:text-slate-200">
+              {item}
+            </span>
+          ))
+        }
+      </div>
+
+      <div class="mt-6 flex flex-wrap gap-3">
+        {
+          project.data.githubUrl && (
+            <a
+              href={project.data.githubUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-1.5 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-800 dark:bg-sky-500 dark:text-slate-950 dark:hover:bg-sky-400"
+            >
+              <span>GitHub リポジトリ</span>
+              <span aria-hidden="true">&#8599;</span>
+            </a>
+          )
+        }
+
+        {
+          project.data.articleUrl && (
+            <a
+              href={project.data.articleUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-950 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-700 dark:hover:bg-slate-800"
+            >
+              <span>Zenn 解説記事</span>
+              <span aria-hidden="true">&#8599;</span>
+            </a>
+          )
+        }
+
+        {
+          project.data.demoUrl && (
+            <a
+              href={project.data.demoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-950 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-700 dark:hover:bg-slate-800"
+            >
+              <span>公開デモ</span>
+              <span aria-hidden="true">&#8599;</span>
+            </a>
+          )
+        }
+      </div>
+    </header>
+
+    <div class="prose-project mt-8">
+      <Content />
+    </div>
+  </article>
+</BaseLayout>
