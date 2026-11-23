@@ -1,7 +1,7 @@
 # kurousa.dev
 
 フルスタックエンジニア **kurousa** の個人ポートフォリオサイトです。  
-Astro（SSG）＋ TypeScript ＋ Tailwind CSS v4 ＋ Content Collections で構築し、Cloudflare Pages へ静的ホスティングします。
+Astro（SSG）＋ TypeScript ＋ Tailwind CSS v4 ＋ Content Collections で構築し、Cloudflare Workers（Static Assets）へ静的ホスティングします。
 
 ## 技術スタック
 
@@ -9,7 +9,7 @@ Astro（SSG）＋ TypeScript ＋ Tailwind CSS v4 ＋ Content Collections で構�
 - **Styling**: Tailwind CSS v4（ダークテーマデフォルト・ライト/ダーク切替対応）
 - **Content**: Astro Content Collections（`src/content/projects/*.md`）
 - **Zenn連携**: ビルド時に `https://zenn.dev/user_thebigslee/feed` の RSS を取得して一覧表示（取得失敗時はビルドを落とさずフォールバックUIを表示）
-- **Hosting**: Cloudflare Pages（`https://kurousa.dev`）
+- **Hosting**: Cloudflare Workers（Static Assets / `https://kurousa.dev`）
 
 ## ローカル開発・ビルド
 
@@ -48,17 +48,18 @@ Markdown で詳細を記述します。
 
 - `src/lib/zenn.ts` がビルド時に Zenn の RSS フィードを取得し、最新6件を `Articles` セクションへ表示します。
 - ネットワーク障害・タイムアウト（8秒）・HTTPエラー発生時は警告ログのみを出力し、ビルドを失敗させずに Zenn プロフィールへのフォールバック案内を表示します。
-- 新しい Zenn 記事を公開したあとにサイトへ反映したい場合は、Cloudflare Pages の **Deploy Hook** または再デプロイを実行してください。
+- 新しい Zenn 記事を公開したあとにサイトへ反映したい場合は、Cloudflare Workers のビルド設定（**Settings → Build**）から再ビルド（または Deploy Hook）を実行してください。
 
-## Cloudflare Pages デプロイ手順
+## Cloudflare Workers（Static Assets）デプロイ手順
+
+静的サイトはルート直下の `wrangler.jsonc`（`"assets": { "directory": "./dist" }`）により Cloudflare Workers の Static Assets として配信されます。
 
 1. GitHub 上に `kurousa/kurousa.dev` リポジトリを作成し、本リポジトリを `main` ブランチへ push します。
-2. Cloudflare ダッシュボード → **Workers & Pages** → **Create** → **Pages** → **Connect to Git** から `kurousa/kurousa.dev` を選択します。
-3. ビルド設定を入力します：
-   - **Production branch**: `main`
-   - **Framework preset**: `Astro`
+2. Cloudflare ダッシュボード → **Workers & Pages** → **Create** → **Connect to Git** から `kurousa/kurousa.dev` を選択します。
+3. セットアップ画面で以下を設定して **Deploy** します：
+   - **Project name**: `kurousa-dev`（`wrangler.jsonc` の `name` と一致）
    - **Build command**: `npm run build`
-   - **Build output directory**: `dist`
-   - **Environment variables（任意）**: `NODE_VERSION` = `22`（または `24`）
-4. デプロイ完了後、Pages プロジェクトの **Custom domains** から `kurousa.dev` を追加します（Cloudflare Registrar 管理ドメインのため DNS レコードは自動設定されます）。
-5. `www.kurousa.dev` を `kurousa.dev` へリダイレクトする場合は、Custom domains に `www.kurousa.dev` も追加するか DNS にプレースホルダーレコードを置いたうえで、ドメインの **Rules → Redirect Rules**（Single Redirect）にてホスト名 `www.kurousa.dev` → `https://kurousa.dev${http.request.uri.path}`（301）を設定してください。
+   - **Deploy command**: `npx wrangler deploy`
+   - **Preview command**: 初期値のままで問題ありません（不要な場合は `Enable Preview builds` を OFF）
+4. デプロイ完了後、Worker の **Settings → Domains & Routes** → **+ Add** → **Custom domain** から `kurousa.dev` を追加します（Cloudflare Registrar 管理ドメインのため DNS レコードは自動設定されます）。
+5. `www.kurousa.dev` を `kurousa.dev` へリダイレクトする場合は、**Domains & Routes** に `www.kurousa.dev` も追加（または DNS で `www` のプロキシ有効な `AAAA` レコード `100::` を作成）したうえで、ドメインの **Rules → Redirect Rules**（Single Redirect）にてホスト名 `www.kurousa.dev` → `https://kurousa.dev${http.request.uri.path}`（301）を設定してください。
